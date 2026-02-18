@@ -24,8 +24,9 @@
             position: fixed;
             bottom: 0;
             right: 0;
-            width: 5px;
-            height: 5px;
+            /* Modification demandée : taille 10x10 */
+            width: 10px;
+            height: 10px;
             background-color: transparent;
             cursor: default;
             z-index: 50;
@@ -52,8 +53,8 @@
         // Import des fonctionnalités React depuis la globale (car pas de build step)
         const { useState, useEffect } = React;
         
-        // Import des icônes depuis internet
-        import { Calendar, Users, Baby, Clock, MapPin, Plus, Lock, X, ChevronLeft, ChevronRight, Phone, Mail, Loader, AlertTriangle, WifiOff, Database } from 'https://esm.sh/lucide-react@0.292.0';
+        // Import des icônes depuis internet (Ajout de Trash2 pour la corbeille)
+        import { Calendar, Users, Baby, Clock, MapPin, Plus, Lock, X, ChevronLeft, ChevronRight, Phone, Mail, Loader, AlertTriangle, WifiOff, Database, Trash2 } from 'https://esm.sh/lucide-react@0.292.0';
 
         // --- Configuration Supabase (API REST) ---
         const SUPABASE_URL = 'https://bnloivgpihtsxydjkgyc.supabase.co';
@@ -230,8 +231,9 @@
                 }
             };
 
+            // Suppression d'un événement complet
             const deleteEvent = async (id) => {
-                if (confirm("Êtes-vous sûr de vouloir supprimer cette animation ?")) {
+                if (confirm("Êtes-vous sûr de vouloir supprimer cet événement ? Toutes les inscriptions associées seront perdues.")) {
                     try {
                         await supabaseFetch(`rpe_events?id=eq.${id}`, {
                             method: 'DELETE'
@@ -241,6 +243,22 @@
                     } catch (error) {
                         console.error("Erreur suppression:", error);
                         alert("Impossible de supprimer l'événement.");
+                    }
+                }
+            };
+
+            // Suppression d'une inscription spécifique
+            const handleDeleteRegistration = async (registrationId) => {
+                if (confirm("Voulez-vous supprimer l'inscription de cette assistante maternelle ?")) {
+                    try {
+                        await supabaseFetch(`rpe_registrations?id=eq.${registrationId}`, {
+                            method: 'DELETE'
+                        });
+                        fetchData(); // Rafraîchir pour voir la suppression
+                        // Si on est dans le modal, les données seront mises à jour car on utilise selectedEvent dérivé du state
+                    } catch (error) {
+                        console.error("Erreur suppression inscription:", error);
+                        alert("Impossible de supprimer l'inscription.");
                     }
                 }
             };
@@ -310,7 +328,11 @@
                         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
                             <div className="flex items-center gap-3">
                                 <div className="bg-sky-600 p-2 rounded-lg text-white shadow-sm"><Baby size={28} /></div>
-                                <div><h1 className="text-xl md:text-2xl font-bold text-slate-800 leading-none">Relais Petite Enfance</h1><p className="text-xs text-slate-500 font-medium mt-1">Communauté de Communes</p></div>
+                                <div>
+                                    <h1 className="text-xl md:text-2xl font-bold text-slate-800 leading-none">Relais Petite Enfance</h1>
+                                    {/* Modification du titre demandée */}
+                                    <p className="text-xs text-slate-500 font-medium mt-1">Communauté de Communes Marches du Velay Rochebaron</p>
+                                </div>
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-[10px] md:text-xs font-bold border border-green-200 flex items-center gap-1"><Database size={10} /> EN LIGNE</span>
@@ -353,7 +375,20 @@
                                                 <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                                                     {selectedEvent.registrations.map((reg, idx) => (
                                                         <div key={idx} className="bg-white border border-slate-200 p-3 rounded shadow-sm text-sm hover:border-sky-200 transition">
-                                                            <div className="flex justify-between font-bold text-slate-700"><span>{reg.am_name}</span><span className="text-sky-600 bg-sky-50 px-2 rounded-full text-xs flex items-center">{reg.child_count} enfant(s)</span></div>
+                                                            <div className="flex justify-between font-bold text-slate-700 items-start">
+                                                                <span>{reg.am_name}</span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-sky-600 bg-sky-50 px-2 rounded-full text-xs flex items-center">{reg.child_count} enfant(s)</span>
+                                                                    {/* Bouton de suppression d'inscription */}
+                                                                    <button 
+                                                                        onClick={() => handleDeleteRegistration(reg.id)}
+                                                                        className="text-gray-400 hover:text-red-500 transition p-1"
+                                                                        title="Supprimer cette inscription"
+                                                                    >
+                                                                        <Trash2 size={16} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
                                                             <div className="text-slate-500 flex items-center gap-1 mt-1 text-xs"><Phone size={12}/> / <Mail size={12}/> : <span className="font-mono">{reg.contact}</span></div>
                                                             <div className="mt-2 text-slate-600 text-xs border-t border-slate-100 pt-1"><span className="font-semibold text-slate-400">Enfants:</span> {reg.child_names || "Non précisé"}</div>
                                                         </div>
